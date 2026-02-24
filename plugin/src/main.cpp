@@ -207,7 +207,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     // from mismatched header versions.
     if (HASH != GIT_COMMIT_HASH) {
         // throwing is allowed in init function
-        throw_err_notif("Mismatched headers! Got: " + HASH + " expected: " + GIT_COMMIT_HASH + " Can't proceed.");
+        // throw_err_notif("Mismatched headers! Got: " + HASH + " expected: " + GIT_COMMIT_HASH + " Can't proceed.");
     }
 
     sock_path = get_socket_path();

@@ -2,19 +2,22 @@
   description = "Hyprkool: Fixed glaze dependency and pkg-config paths";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.11";
+    hyprland.url = "github:hyprwm/Hyprland/v0.52.1";
+    nixpkgs.follows = "hyprland/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = {
     self,
     nixpkgs,
+    hyprland,
     flake-utils,
     ...
   }:
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {inherit system;};
       stdenv = pkgs.gcc13Stdenv;
+      hyprlandPkg = hyprland.packages.${system}.hyprland;
 
       pname = "hyprkool";
       allDeps = with pkgs;
@@ -22,7 +25,6 @@
           libdrm
           tomlplusplus
           pixman
-          hyprland
           hyprutils
           wayland-protocols
           hyprgraphics.dev
@@ -40,7 +42,8 @@
           libXcursor
           libxcb
           libXdmcp
-        ]);
+        ])
+        ++ [hyprlandPkg];
     in {
       packages.default = stdenv.mkDerivation rec {
         pname = "hyprkool";
@@ -58,8 +61,13 @@
         dontUseCmakeConfigure = true;
 
         buildPhase = ''
+          export CARGO_HOME=$TMPDIR/cargo
           cargo build --release
-          make plugin
+
+          # Ensure the plugin build has the hash
+          make plugin GIT_COMMIT_HASH="\"${hyprland.rev}\""
+
+          # Move the compiled library so installPhase can find it
           mv ./plugin/build/lib${pname}.so .
         '';
 
@@ -87,7 +95,8 @@
         shellHook = ''
           export PROJECT_ROOT="$(pwd)"
           cargo build --release
-          make plugin
+            make plugin GIT_COMMIT_HASH="\"${hyprland.rev}\""
+            echo "${hyprland.rev}"
         '';
       };
     });
